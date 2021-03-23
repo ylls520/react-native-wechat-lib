@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Environment;
+import android.util.Base64;
 
 import androidx.annotation.Nullable;
 
@@ -395,6 +396,39 @@ public class WeChatModule extends ReactContextBaseJavaModule implements IWXAPIEv
             req.scene = data.hasKey("scene") ? data.getInt("scene") : SendMessageToWX.Req.WXSceneSession;
             callback.invoke(null, api.sendReq(req));
         } catch (FileNotFoundException e) {
+            callback.invoke(null, false);
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 分享Base64图片
+     *
+     * @param data
+     * @param callback
+     */
+    @ReactMethod
+    public void shareBase64Image(final ReadableMap data, final Callback callback) {
+        FileInputStream fs = null;
+        try {
+            String base64Data = data.getString("imageUrl");
+            byte[] bytes = Base64.decode(base64Data, Base64.DEFAULT);
+            Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);;
+
+            WXImageObject imgObj = new WXImageObject(bmp);
+            WXMediaMessage msg = new WXMediaMessage();
+            msg.mediaObject = imgObj;
+            // 设置缩略图
+            msg.thumbData = bitmapResizeGetBytes(bmp, THUMB_SIZE);
+            bmp.recycle();
+            // 构造一个Req
+            SendMessageToWX.Req req = new SendMessageToWX.Req();
+            req.transaction = "img";
+            req.message = msg;
+            // req.userOpenId = getOpenId();
+            req.scene = data.hasKey("scene") ? data.getInt("scene") : SendMessageToWX.Req.WXSceneSession;
+            callback.invoke(null, api.sendReq(req));
+        } catch (Exception e) {
             callback.invoke(null, false);
             e.printStackTrace();
         }

@@ -151,6 +151,7 @@ const nativeShareToFavorite = wrapApi(WeChat.shareToFavorite);
 const nativeSendAuthRequest = wrapApi(WeChat.sendAuthRequest);
 const nativeShareText = wrapApi(WeChat.shareText);
 const nativeShareImage = wrapApi(WeChat.shareImage);
+const nativeShareBase64Image = wrapApi(WeChat.shareBase64Image);
 const nativeShareLocalImage = wrapApi(WeChat.shareLocalImage);
 const nativeShareMusic = wrapApi(WeChat.shareMusic);
 const nativeShareVideo = wrapApi(WeChat.shareVideo);
@@ -275,6 +276,27 @@ export function shareLocalImage(data) {
   }
   return new Promise((resolve, reject) => {
     nativeShareLocalImage(data);
+    emitter.once('SendMessageToWX.Resp', (resp) => {
+      if (resp.errCode === 0) {
+        resolve(resp);
+      } else {
+        reject(new WechatError(resp));
+      }
+    });
+  });
+}
+
+/**
+ * Share local image
+ * @method shareLocalImage
+ * @param {Object} data
+ */
+export function shareBase64Image(data) {
+  if (data && data.scene == null) {
+    data.scene = 0;
+  }
+  return new Promise((resolve, reject) => {
+    nativeShareBase64Image(data);
     emitter.once('SendMessageToWX.Resp', (resp) => {
       if (resp.errCode === 0) {
         resolve(resp);

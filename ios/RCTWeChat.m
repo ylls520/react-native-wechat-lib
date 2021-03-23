@@ -377,6 +377,46 @@ RCT_EXPORT_METHOD(shareLocalImage:(NSDictionary *)data
     [WXApi sendReq:req completion:completion];
 }
 
+// 分享Base64图片
+RCT_EXPORT_METHOD(shareBase64Image:(NSDictionary *)data
+                  :(RCTResponseSenderBlock)callback)
+{
+    NSString *base64Data = data[@"imageUrl"];
+    if (base64Data == NULL  || [base64Data isEqual:@""]) {
+        callback([NSArray arrayWithObject:@"shareBase64Image: The value of ImageUrl cannot be empty."]);
+        return;
+    }
+
+    // 从Base64转换
+    NSData *imageBase64Data = [[NSData alloc] initWithBase64EncodedString:base64Data options:NSDataBase64DecodingIgnoreUnknownCharacters];
+    UIImage *image = [UIImage imageWithData:imageBase64Data];
+    // 从 UIImage 获取图片数据
+    NSData *imageData = UIImageJPEGRepresentation(image, 1);
+    // 用图片数据构建 WXImageObject 对象
+    WXImageObject *imageObject = [WXImageObject object];
+    imageObject.imageData = imageData;
+
+    WXMediaMessage *message = [WXMediaMessage message];
+    // 利用原图压缩出缩略图，确保缩略图大小不大于32KB
+    message.thumbData = [self compressImage: image toByte:32678];
+    message.mediaObject = imageObject;
+    message.title = data[@"title"];
+    message.description = data[@"description"];
+
+    SendMessageToWXReq *req = [[SendMessageToWXReq alloc] init];
+    req.bText = NO;
+    req.message = message;
+    req.scene = [data[@"scene"] integerValue];
+    //    [WXApi sendReq:req];
+    void ( ^ completion )( BOOL );
+    completion = ^( BOOL success )
+    {
+        callback(@[success ? [NSNull null] : INVOKE_FAILED]);
+        return;
+    };
+    [WXApi sendReq:req completion:completion];
+}
+
 // 分享音乐
 RCT_EXPORT_METHOD(shareMusic:(NSDictionary *)data
                   :(RCTResponseSenderBlock)callback)
